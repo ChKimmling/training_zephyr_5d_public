@@ -1,14 +1,17 @@
 # Zephyr 5-Tage-Workshop
 
-Willkommen im Material zum fünftägigen Zephyr-RTOS-Workshop. Das Repo wächst mit dem Training:
+Willkommen im Material zum fünftägigen Zephyr-RTOS-Workshop. 
+
+Das Repo wächst mit dem Training:
 **an jedem Workshop-Tag kommen die neuen Folien, Übungen und Exkurse des Tages hinzu.** Mit
 `git pull` im Ordner `training/` holt ihr euch jeweils den aktuellen Stand.
 
-Die Übungen laufen überwiegend auf `native_sim`, also direkt auf dem Linux-Host, ohne
-Hardware. Technisch ist das Repo ein off-tree Zephyr Workspace (West T2) auf Basis von
-**Zephyr v4.4.2**: Es ist das Manifest-Repo ([west.yml](west.yml)); Zephyr und die Module werden
-daneben ausgecheckt. Der Checkout ist klein gehalten: nur workshop-relevante Module,
-`clone-depth: 1`, kein Import von Zephyrs eigenem `west.yml`.
+Die meisten Übungen laufen mit `native_sim` direkt auf dem Linux-Host; zusätzliche Hardware
+ist dafür nicht erforderlich. Dieses Repository ist das Manifest-Repo eines off-tree-Zephyr-
+Workspaces (West T2) und basiert auf **Zephyr v4.4.2** (siehe [west.yml](west.yml)). Zephyr
+und die Module werden als separate Projekte daneben ausgecheckt. Der Workspace bleibt bewusst
+schlank: Er enthält nur workshop-relevante Module, verwendet `clone-depth: 1` und importiert
+Zephyrs eigenes `west.yml` nicht.
 
 ## Inhalt
 | Ordner | Zweck |
