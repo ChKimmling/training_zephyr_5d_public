@@ -1,0 +1,21 @@
+mainmenu "Day 1 Kconfig exercise"
+
+source "Kconfig.zephyr"
+
+config TRAINING_LIMIT
+	int "Sample limit"
+	range 1 100
+	default 4
+
+config TRAINING_INTERVAL_MS
+	int "Sample interval in milliseconds"
+	range 10 5000
+	default 250
+
+config TRAINING_VERBOSE_OUTPUT
+	bool "Enable diagnostic output"
+	default n
+
+config TRAINING_START_ACTIVE
+	bool "Start in active state"
+	default n

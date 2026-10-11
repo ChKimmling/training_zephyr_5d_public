@@ -1,0 +1,8 @@
+mainmenu "Day 1 missing configuration exercise"
+
+source "Kconfig.zephyr"
+
+config TRAINING_LIMIT
+	int "Required sample limit"
+	range 0 100
+	default 0

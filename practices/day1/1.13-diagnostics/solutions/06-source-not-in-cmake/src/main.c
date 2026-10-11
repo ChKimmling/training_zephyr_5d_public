@@ -1,0 +1,9 @@
+#include <zephyr/kernel.h>
+
+#include "message.h"
+
+int main(void)
+{
+	print_message();
+	return 0;
+}

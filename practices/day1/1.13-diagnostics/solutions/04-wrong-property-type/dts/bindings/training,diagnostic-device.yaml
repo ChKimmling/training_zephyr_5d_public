@@ -1,0 +1,9 @@
+description: Diagnostic exercise device
+compatible: "training,diagnostic-device"
+properties:
+  status:
+    type: string
+    required: true
+  value:
+    type: int
+    required: true

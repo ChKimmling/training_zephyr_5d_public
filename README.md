@@ -38,9 +38,11 @@ pip install west
 ```
 
 ### 2. Manifest-Repo klonen und Workspace initialisieren
+Im aktivierten venv, im Ordner `training-zephyr-ws`:
+
 ```sh
-git clone https://github.com/ChKimmling/training_zephyr_5d_private.git training
-west init -l training
+git clone https://github.com/ChKimmling/training_zephyr_5d_private.git training-zephyr
+west init -l training-zephyr
 west update --narrow            # ca. 1 GB
 west zephyr-export
 ```
@@ -56,7 +58,7 @@ Ergebnis:
 ```
 training-zephyr-ws/
 ├── .venv/
-├── training/        # dieses Repo (Manifest, Folien, Übungen)
+├── training-zephyr/        # dieses Repo (Manifest, Folien, Übungen)
 ├── zephyr/
 ├── modules/  bootloader/  tools/
 ```

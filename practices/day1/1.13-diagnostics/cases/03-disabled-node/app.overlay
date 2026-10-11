@@ -1,0 +1,11 @@
+/ {
+	aliases {
+		training-device = &training_device;
+	};
+
+	training_device: training-device {
+		compatible = "training,diagnostic-device";
+		status = "disabled";
+		value = <1>;
+	};
+};
