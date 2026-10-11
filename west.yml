@@ -1,0 +1,91 @@
+# Off-tree Zephyr workspace (West T2): this repo is the manifest repo.
+# Zephyr itself is NOT imported; all projects are pinned explicitly (Zephyr v4.4.2)
+# and fetched shallow (clone-depth: 1) to keep the participants' checkout small.
+manifest:
+  version: "1.0"
+
+  remotes:
+    - name: upstream
+      url-base: https://github.com/zephyrproject-rtos
+
+  defaults:
+    remote: upstream
+
+  group-filter: [-hal-stm32]
+
+  projects:
+    - name: zephyr
+      revision: v4.4.2
+      clone-depth: 1
+      west-commands: scripts/west-commands.yml
+
+    - name: cmsis
+      revision: 512cc7e895e8491696b61f7ba8066b4a182569b8
+      path: modules/hal/cmsis
+      clone-depth: 1
+
+    - name: cmsis_6
+      repo-path: CMSIS_6
+      revision: 30a859f44ef8ab4dc8f84b03ed586fd16ccf9d74
+      path: modules/hal/cmsis_6
+      clone-depth: 1
+
+    - name: fatfs
+      revision: f4ead3bf4a6dab3a07d7b5f5315795c073db568d
+      path: modules/fs/fatfs
+      clone-depth: 1
+
+    - name: hal_nordic
+      revision: 44fd3d44b15cb75f80a25b4679f91d2787e28664
+      path: modules/hal/nordic
+      clone-depth: 1
+
+    - name: hal_stm32
+      revision: fc11896dd39cfca37bf9b4aeaaa2df8861b81875
+      path: modules/hal/stm32
+      groups:
+        - hal-stm32   # ~1 GB, disabled by default (see group-filter)
+      clone-depth: 1
+
+    - name: littlefs
+      revision: 8f5ca347843363882619d8f96c00d8dbd88a8e79
+      path: modules/fs/littlefs
+      clone-depth: 1
+
+    - name: mbedtls
+      revision: a3e190fe44c78d1ba67f55979e1257328cc7d0d8
+      path: modules/crypto/mbedtls
+      clone-depth: 1
+
+    - name: mcuboot
+      revision: 6d3b3d2c38ab20c242e5b9abb04d050086383eb2
+      path: bootloader/mcuboot
+      clone-depth: 1
+
+    - name: net-tools
+      revision: 64d7acc661ae2772282570f21beab85d02f2f35c
+      path: tools/net-tools
+      clone-depth: 1
+
+    - name: picolibc
+      revision: 01254932e8e81085817ed61fd858648584ffe37c
+      path: modules/lib/picolibc
+      clone-depth: 1
+
+    - name: segger
+      revision: 50892fdbcf2f570e67baa72b8894a66b16946f72
+      path: modules/debug/segger
+      clone-depth: 1
+
+    - name: tf-psa-crypto
+      revision: dc575a2ddcc8cb16275d24c42a52eaf79ebe2231
+      path: modules/crypto/tf-psa-crypto
+      clone-depth: 1
+
+    - name: zcbor
+      revision: 9164bd18dcd88ff9d9ef98279501fc1093571017
+      path: modules/lib/zcbor
+      clone-depth: 1
+
+  self:
+    path: training
