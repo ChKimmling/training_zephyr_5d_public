@@ -50,11 +50,11 @@ static void worker(void *p1, void *p2, void *p3)
 }
 
 K_THREAD_DEFINE(worker_alpha, WORKER_STACK_SIZE, worker, (void *)&alpha, NULL, NULL,
-		K_PRIO_PREEMPT(1), 0, K_MSEC(100));
+		K_PRIO_PREEMPT(1), 0, 100);
 K_THREAD_DEFINE(worker_bravo, WORKER_STACK_SIZE, worker, (void *)&bravo, NULL, NULL,
-		K_PRIO_PREEMPT(2), 0, K_MSEC(100));
+		K_PRIO_PREEMPT(2), 0, 100);
 K_THREAD_DEFINE(worker_charlie, WORKER_STACK_SIZE, worker, (void *)&charlie, NULL, NULL,
-		K_PRIO_PREEMPT(3), 0, K_MSEC(100));
+		K_PRIO_PREEMPT(3), 0, 100);
 
 int main(void)
 {

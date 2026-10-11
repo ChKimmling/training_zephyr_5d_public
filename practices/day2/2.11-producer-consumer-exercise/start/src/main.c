@@ -28,9 +28,9 @@ static void consumer(void *p1, void *p2, void *p3)
 }
 
 K_THREAD_DEFINE(producer_thread, WORKER_STACK_SIZE, producer, NULL, NULL, NULL,
-		K_PRIO_PREEMPT(2), 0, K_NO_WAIT);
+		K_PRIO_PREEMPT(2), 0, 0);
 K_THREAD_DEFINE(consumer_thread, WORKER_STACK_SIZE, consumer, NULL, NULL, NULL,
-		K_PRIO_PREEMPT(3), 0, K_NO_WAIT);
+		K_PRIO_PREEMPT(3), 0, 0);
 
 int main(void)
 {

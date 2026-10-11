@@ -45,9 +45,9 @@ finished:
 }
 
 K_THREAD_DEFINE(worker_one, WORKER_STACK_SIZE, increment_worker, "worker-one", NULL, NULL,
-		K_PRIO_PREEMPT(1), 0, K_NO_WAIT);
+		K_PRIO_PREEMPT(1), 0, 0);
 K_THREAD_DEFINE(worker_two, WORKER_STACK_SIZE, increment_worker, "worker-two", NULL, NULL,
-		K_PRIO_PREEMPT(1), 0, K_NO_WAIT);
+		K_PRIO_PREEMPT(1), 0, 0);
 
 int main(void)
 {
