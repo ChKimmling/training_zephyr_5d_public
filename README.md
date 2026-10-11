@@ -41,7 +41,7 @@ pip install west
 Im aktivierten venv, im Ordner `training-zephyr-ws`:
 
 ```sh
-git clone https://github.com/ChKimmling/training_zephyr_5d_private.git training-zephyr
+git clone https://github.com/ChKimmling/training_zephyr_5d_public.git training-zephyr
 west init -l training-zephyr
 west update --narrow            # ca. 1 GB
 west zephyr-export
