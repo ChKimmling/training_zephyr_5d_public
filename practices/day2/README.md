@@ -1,7 +1,8 @@
 # Praktische Übungen – Tag 2
 
 Die vier Übungen bauen auf den Kernel-Grundlagen des Tages auf. Jedes Projekt ist separat
-baubar und enthält ein Teilnehmergerüst in `start/` sowie eine Referenz in `solution/`.
+baubar und enthält ein Teilnehmergerüst in `start/` mit kommentierten TODOs und
+Funktionsgerüsten sowie eine Referenz in `solution/`.
 
 | Agenda | Übung | Schwerpunkt |
 |---|---|---|
