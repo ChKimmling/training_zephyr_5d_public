@@ -10,32 +10,40 @@ static volatile uint32_t shared_counter;
 K_MUTEX_DEFINE(counter_mutex);
 K_SEM_DEFINE(worker_finished, 0, 2);
 
-static void increment_shared_counter(void)
+static int increment_shared_counter(void)
 {
 	/*
 	 * TODO: Mutex mit endlichem Timeout sperren und den Rückgabewert prüfen.
-	 * Der Yield zwischen Lesen und Schreiben macht das Race sichtbar.
-	 * Schütze beide Zugriffe gemeinsam und gib den Mutex danach wieder frei.
+	 * Schütze den gesamten Read-Modify-Write-Abschnitt und gib den Mutex
+	 * danach wieder frei. Der Yield macht das Race ohne Schutz sichtbar.
 	 */
 	uint32_t current = shared_counter;
 
 	k_yield();
 	shared_counter = current + 1;
+
+	return 0;
 }
 
 static void increment_worker(void *p1, void *p2, void *p3)
 {
 	const char *name = p1;
+	int ret;
 
 	ARG_UNUSED(p2);
 	ARG_UNUSED(p3);
 
 	for (int i = 0; i < ITERATIONS; ++i) {
-		increment_shared_counter();
+		ret = increment_shared_counter();
+		if (ret != 0) {
+			printk("%s: counter increment failed: %d\n", name, ret);
+			goto finished;
+		}
 	}
 
 	printk("%s finished\n", name);
-	/* TODO: Auch nach einem Fehlerpfad signalisieren, falls SIGNAL_COMPLETION aktiv ist. */
+
+finished:
 	if (SIGNAL_COMPLETION) {
 		k_sem_give(&worker_finished);
 	}
@@ -48,15 +56,19 @@ K_THREAD_DEFINE(worker_two, WORKER_STACK_SIZE, increment_worker, "worker-two", N
 
 int main(void)
 {
+	int completed = 0;
+
 	for (int i = 0; i < 2; ++i) {
-		/* TODO: Timeout explizit auswerten; SIGNAL_COMPLETION=0 testet diesen Pfad. */
 		int ret = k_sem_take(&worker_finished, K_SECONDS(3));
 
 		if (ret != 0) {
 			printk("completion timeout: %d\n", ret);
+			continue;
 		}
+		++completed;
 	}
 
-	printk("expected=%u actual=%u\n", 2U * ITERATIONS, shared_counter);
+	printk("workers_completed=%d expected=%u actual=%u\n", completed,
+	       2U * ITERATIONS, shared_counter);
 	return 0;
 }

@@ -9,6 +9,21 @@ static volatile uint32_t shared_counter;
 K_MUTEX_DEFINE(counter_mutex);
 K_SEM_DEFINE(worker_finished, 0, 2);
 
+static int increment_shared_counter(void)
+{
+	int ret;
+
+	ret = k_mutex_lock(&counter_mutex, K_SECONDS(1));
+	if (ret != 0) {
+		return ret;
+	}
+
+	uint32_t current = shared_counter;
+	shared_counter = current + 1;
+
+	return k_mutex_unlock(&counter_mutex);
+}
+
 static void increment_worker(void *p1, void *p2, void *p3)
 {
 	const char *name = p1;
@@ -18,20 +33,9 @@ static void increment_worker(void *p1, void *p2, void *p3)
 	ARG_UNUSED(p3);
 
 	for (int i = 0; i < ITERATIONS; ++i) {
-		ret = k_mutex_lock(&counter_mutex, K_SECONDS(1));
+		ret = increment_shared_counter();
 		if (ret != 0) {
-			printk("%s: mutex lock failed: %d\n", name, ret);
-			goto finished;
-		}
-
-		uint32_t current = shared_counter;
-
-		k_yield();
-		shared_counter = current + 1;
-
-		ret = k_mutex_unlock(&counter_mutex);
-		if (ret != 0) {
-			printk("%s: mutex unlock failed: %d\n", name, ret);
+			printk("%s: counter increment failed: %d\n", name, ret);
 			goto finished;
 		}
 	}
