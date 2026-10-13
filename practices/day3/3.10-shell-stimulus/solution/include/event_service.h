@@ -10,7 +10,7 @@ struct event_stats {
 
 int event_service_init(void);
 void event_service_record_raw(void);
-void event_service_get_stats(struct event_stats *stats);
-void event_service_reset_stats(void);
+int event_service_get_stats(struct event_stats *stats);
+int event_service_reset_stats(void);
 
 #endif

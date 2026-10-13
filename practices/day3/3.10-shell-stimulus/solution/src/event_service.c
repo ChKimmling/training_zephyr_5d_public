@@ -35,16 +35,19 @@ void event_service_record_raw(void)
 	k_sem_give(&event_pending);
 }
 
-void event_service_get_stats(struct event_stats *stats)
+int event_service_get_stats(struct event_stats *stats)
 {
-	if (stats != NULL) {
-		stats->raw_count = (uint32_t)atomic_get(&raw_count);
-		stats->processed_count = (uint32_t)atomic_get(&processed_count);
+	if (stats == NULL) {
+		return -EINVAL;
 	}
+	stats->raw_count = (uint32_t)atomic_get(&raw_count);
+	stats->processed_count = (uint32_t)atomic_get(&processed_count);
+	return 0;
 }
 
-void event_service_reset_stats(void)
+int event_service_reset_stats(void)
 {
 	atomic_set(&raw_count, 0);
 	atomic_set(&processed_count, 0);
+	return 0;
 }

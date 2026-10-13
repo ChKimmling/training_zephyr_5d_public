@@ -31,14 +31,31 @@ int event_input_init(void)
 		ret = gpio_add_callback(input.port, &input_callback);
 	}
 	if (ret == 0) {
-		ret = gpio_pin_interrupt_configure_dt(&input, GPIO_INT_EDGE_BOTH);
-	}
-	if (ret == 0) {
 		event_service_set_input_ready(true);
 	} else {
 		event_service_set_input_ready(false);
 	}
 	return ret;
+}
+
+int event_input_enable(void)
+{
+	return gpio_pin_interrupt_configure_dt(&input, GPIO_INT_EDGE_BOTH);
+}
+
+int event_input_get_level(bool *active)
+{
+	int value;
+
+	if (active == NULL) {
+		return -EINVAL;
+	}
+	value = gpio_pin_get_dt(&input);
+	if (value < 0) {
+		return value;
+	}
+	*active = value != 0;
+	return 0;
 }
 
 const struct gpio_dt_spec *event_input_spec(void)

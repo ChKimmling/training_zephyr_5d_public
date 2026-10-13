@@ -1,3 +1,4 @@
+#include <errno.h>
 #include <zephyr/kernel.h>
 
 #include "event_service.h"
@@ -17,11 +18,13 @@ int event_service_init(void)
 
 int event_service_get_status(struct event_status *status)
 {
+	bool ready;
+
 	if (status == NULL) {
 		return -EINVAL;
 	}
 	k_mutex_lock(&service_mutex, K_FOREVER);
-	bool ready = initialized;
+	ready = initialized;
 	*status = (struct event_status){
 		.initialized = ready,
 		.input_ready = false,
@@ -35,11 +38,13 @@ int event_service_get_status(struct event_status *status)
 
 int event_service_get_stats(struct event_stats *stats)
 {
+	bool ready;
+
 	if (stats == NULL) {
 		return -EINVAL;
 	}
 	k_mutex_lock(&service_mutex, K_FOREVER);
-	bool ready = initialized;
+	ready = initialized;
 	*stats = counters;
 	k_mutex_unlock(&service_mutex);
 	return ready ? 0 : -EAGAIN;

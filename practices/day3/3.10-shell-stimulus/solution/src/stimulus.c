@@ -34,6 +34,7 @@ static int set_level_locked(bool active)
 
 	if (ret == 0) {
 		input_active = active;
+		last_error = 0;
 	} else {
 		last_error = ret;
 	}

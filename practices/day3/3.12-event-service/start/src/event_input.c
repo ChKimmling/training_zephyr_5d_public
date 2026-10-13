@@ -3,6 +3,7 @@
 
 #include "event_service.h"
 
+/* TODO: Keep this devicetree-based input spec shared with the stimulus adapter. */
 static const struct gpio_dt_spec input =
 	GPIO_DT_SPEC_GET(DT_ALIAS(event_input), gpios);
 static struct gpio_callback input_callback;
@@ -22,16 +23,43 @@ int event_input_init(void)
 	int ret;
 
 	if (!gpio_is_ready_dt(&input)) {
+		event_service_set_input_ready(false);
 		return -ENODEV;
 	}
 	ret = gpio_pin_configure_dt(&input, GPIO_INPUT);
-	if (ret != 0) {
-		return ret;
+	if (ret == 0) {
+		gpio_init_callback(&input_callback, input_changed, BIT(input.pin));
+		ret = gpio_add_callback(input.port, &input_callback);
 	}
-	gpio_init_callback(&input_callback, input_changed, BIT(input.pin));
-	ret = gpio_add_callback(input.port, &input_callback);
 	if (ret != 0) {
-		return ret;
+		event_service_set_input_ready(false);
+	} else {
+		event_service_set_input_ready(true);
 	}
+	return ret;
+}
+
+int event_input_enable(void)
+{
 	return gpio_pin_interrupt_configure_dt(&input, GPIO_INT_EDGE_BOTH);
+}
+
+int event_input_get_level(bool *active)
+{
+	int value;
+
+	if (active == NULL) {
+		return -EINVAL;
+	}
+	value = gpio_pin_get_dt(&input);
+	if (value < 0) {
+		return value;
+	}
+	*active = value != 0;
+	return 0;
+}
+
+const struct gpio_dt_spec *event_input_spec(void)
+{
+	return &input;
 }

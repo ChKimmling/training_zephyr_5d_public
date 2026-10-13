@@ -1,0 +1,10 @@
+mainmenu "Day 3 logging basics"
+
+source "Kconfig.zephyr"
+
+config EVENT_APP_LOG_LEVEL
+	int "Event application log level"
+	range 0 4
+	default 3
+	help
+	  Compile-time log level for the event_app module: 3 for info and 4 for debug.

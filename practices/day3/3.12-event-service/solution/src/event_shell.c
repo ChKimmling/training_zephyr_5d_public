@@ -8,6 +8,7 @@
 static int parse_u32(const struct shell *sh, const char *text, uint32_t min,
 		     uint32_t max, uint32_t *value)
 {
+	const char *digit;
 	char *end;
 	unsigned long parsed;
 
@@ -16,6 +17,14 @@ static int parse_u32(const struct shell *sh, const char *text, uint32_t min,
 		event_service_set_error(-EINVAL);
 		shell_error(sh, "expected an unsigned integer");
 		return -EINVAL;
+	}
+	for (digit = text; *digit != '\0'; digit++) {
+		if (*digit < '0' || *digit > '9') {
+			event_service_reject();
+			event_service_set_error(-EINVAL);
+			shell_error(sh, "expected an unsigned integer");
+			return -EINVAL;
+		}
 	}
 	errno = 0;
 	parsed = strtoul(text, &end, 10);
@@ -37,7 +46,11 @@ static int report_result(const struct shell *sh, const char *name, int ret)
 	}
 	event_service_reject();
 	event_service_set_error(ret);
-	shell_error(sh, "%s failed: %d", name, ret);
+	if (ret == -EBUSY) {
+		shell_error(sh, "%s rejected: a stimulus sequence is active", name);
+	} else {
+		shell_error(sh, "%s failed: %d", name, ret);
+	}
 	return ret;
 }
 
@@ -64,10 +77,11 @@ static int cmd_status(const struct shell *sh, size_t argc, char **argv)
 static int cmd_stats(const struct shell *sh, size_t argc, char **argv)
 {
 	struct event_stats stats;
-	int ret = event_service_get_stats(&stats);
+	int ret;
 
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
+	ret = event_service_get_stats(&stats);
 	if (ret != 0) {
 		shell_error(sh, "stats unavailable: %d", ret);
 		return ret;
@@ -80,9 +94,12 @@ static int cmd_stats(const struct shell *sh, size_t argc, char **argv)
 
 static int cmd_reset(const struct shell *sh, size_t argc, char **argv)
 {
+	int ret;
+
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
-	return report_result(sh, "reset", event_service_reset_stats());
+	ret = event_service_reset_stats();
+	return report_result(sh, "reset", ret);
 }
 
 static int cmd_input(const struct shell *sh, size_t argc, char **argv)
@@ -91,7 +108,7 @@ static int cmd_input(const struct shell *sh, size_t argc, char **argv)
 	int ret;
 
 	ARG_UNUSED(argc);
-	ret = parse_u32(sh, argv[2], 0U, 1U, &level);
+	ret = parse_u32(sh, argv[1], 0U, 1U, &level);
 	return ret != 0 ? ret : report_result(sh, "input", stimulus_set_input(level != 0U));
 }
 
@@ -100,8 +117,8 @@ static int cmd_pulse(const struct shell *sh, size_t argc, char **argv)
 	uint32_t duration = 100U;
 	int ret = 0;
 
-	if (argc > 2U) {
-		ret = parse_u32(sh, argv[2], 20U, 2000U, &duration);
+	if (argc > 1U) {
+		ret = parse_u32(sh, argv[1], 20U, 2000U, &duration);
 	}
 	return ret != 0 ? ret : report_result(sh, "pulse", stimulus_start_pulse(duration));
 }
@@ -113,9 +130,9 @@ static int cmd_burst(const struct shell *sh, size_t argc, char **argv)
 	int ret;
 
 	ARG_UNUSED(argc);
-	ret = parse_u32(sh, argv[2], 1U, 20U, &count);
+	ret = parse_u32(sh, argv[1], 1U, 20U, &count);
 	if (ret == 0) {
-		ret = parse_u32(sh, argv[3], 20U, 2000U, &gap);
+		ret = parse_u32(sh, argv[2], 20U, 2000U, &gap);
 	}
 	return ret != 0 ? ret : report_result(sh, "burst", stimulus_start_burst(count, gap));
 }
@@ -128,13 +145,13 @@ static int cmd_cancel(const struct shell *sh, size_t argc, char **argv)
 }
 
 SHELL_STATIC_SUBCMD_SET_CREATE(event_commands,
-	SHELL_CMD_ARG(status, NULL, "Show service status", cmd_status, 2, 0),
-	SHELL_CMD_ARG(stats, NULL, "Show event statistics", cmd_stats, 2, 0),
-	SHELL_CMD_ARG(reset, NULL, "Reset statistics", cmd_reset, 2, 0),
-	SHELL_CMD_ARG(input, NULL, "Set emulated input: 0 or 1", cmd_input, 3, 0),
-	SHELL_CMD_ARG(pulse, NULL, "Start pulse: optional duration in ms", cmd_pulse, 2, 1),
-	SHELL_CMD_ARG(burst, NULL, "Start burst: count and gap in ms", cmd_burst, 4, 0),
-	SHELL_CMD_ARG(cancel, NULL, "Cancel active stimulus", cmd_cancel, 2, 0),
+	SHELL_CMD_ARG(status, NULL, "Show service status", cmd_status, 1, 0),
+	SHELL_CMD_ARG(stats, NULL, "Show event statistics", cmd_stats, 1, 0),
+	SHELL_CMD_ARG(reset, NULL, "Reset statistics", cmd_reset, 1, 0),
+	SHELL_CMD_ARG(input, NULL, "Set emulated input: 0 or 1", cmd_input, 2, 0),
+	SHELL_CMD_ARG(pulse, NULL, "Start pulse: optional duration in ms", cmd_pulse, 1, 2),
+	SHELL_CMD_ARG(burst, NULL, "Start burst: count and gap in ms", cmd_burst, 3, 0),
+	SHELL_CMD_ARG(cancel, NULL, "Cancel active stimulus", cmd_cancel, 1, 0),
 	SHELL_SUBCMD_SET_END
 );
 SHELL_CMD_REGISTER(event, &event_commands, "Interactive event service", NULL);
