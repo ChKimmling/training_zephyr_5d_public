@@ -25,9 +25,6 @@ west build -p always -b native_sim training-zephyr/practices/day1/1.12-devicetre
 ./build/day1-1.12/zephyr/zephyr.exe
 ```
 
-Die Lösung ist als Referenz unter `solution/` enthalten. Overlay-Änderungen werden beim
-nächsten Build ausgewertet.
-
 ## Erwartetes Ergebnis
 
 Die Lösung gibt `device=day1-sim interval=250 ms limit=4` aus. Die Werte stammen aus dem
