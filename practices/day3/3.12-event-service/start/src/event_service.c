@@ -23,8 +23,6 @@ int event_service_init(void)
 	k_spinlock_key_t key = k_spin_lock(&service_lock);
 
 	/* TODO: Initialize every service field before publishing readiness. */
-	counters = (struct event_stats){0};
-	sequence_number = 0U;
 	running = false;
 	input_ready = false;
 	initialized = true;
@@ -139,7 +137,6 @@ int event_service_reset_stats(void)
 		return -EAGAIN;
 	}
 	/* TODO: Reset the agreed counters without changing running/device state. */
-	counters = (struct event_stats){0};
 	k_spin_unlock(&service_lock, key);
-	return 0;
+	return -ENOSYS;
 }

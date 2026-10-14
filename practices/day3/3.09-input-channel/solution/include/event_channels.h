@@ -7,6 +7,7 @@
 
 ZBUS_CHAN_DECLARE(event_cmd_chan);
 ZBUS_CHAN_DECLARE(event_input_chan);
+
 ZBUS_OBS_DECLARE(event_stimulus_subscriber, event_input_listener);
 
 #endif

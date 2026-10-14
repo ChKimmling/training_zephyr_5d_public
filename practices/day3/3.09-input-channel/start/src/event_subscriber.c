@@ -17,19 +17,9 @@ static void subscriber_thread(void *p1, void *p2, void *p3)
 	ARG_UNUSED(p3);
 	while (zbus_sub_wait_msg(&event_stimulus_subscriber, &chan, &command, K_FOREVER) == 0) {
 		/* TODO: Validate the command and create a portable input message. */
-		if (chan == &event_cmd_chan) {
-			struct event_input input = {
-				.source = EVENT_SOURCE_EMULATED,
-				.sequence = command.sequence,
-				.active = command.value != 0,
-				.timestamp = k_uptime_get(),
-			};
-			int ret = zbus_chan_pub(&event_input_chan, &input, K_NO_WAIT);
-
-			if (ret != 0) {
-				LOG_ERR("input publish failed: %d", ret);
-			}
-		}
+		ARG_UNUSED(chan);
+		ARG_UNUSED(command);
+		LOG_INF("command received; input translation is not implemented yet");
 	}
 }
 
