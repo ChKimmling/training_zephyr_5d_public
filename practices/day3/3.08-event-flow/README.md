@@ -1,41 +1,43 @@
-# 3.08 – Ereignispfad für den Use-Case planen
+# 3.08 – zbus-Vertrag festlegen
 
-## Ziel
+## Lernziel
 
-Vor der Implementierung in 3.10 und 3.12 Kontroll- und Ereignispfad trennen,
-Modulverantwortungen zuordnen und prüfbare Sollwerte festlegen.
-
-## Use-Case
-
-Eine Lichtschranke am Förderband meldet vorbeifahrende Werkstücke. Im Wartungsmodus kann
-ein Servicetechniker Ereignisse mit `event pulse` oder `event burst 5 200` simulieren.
-Die Anwendung soll Eingaben validieren, GPIO-Events erfassen und sie außerhalb des
-GPIO-Callback-Kontexts verarbeiten.
+Portierbare Command- und Input-Nachrichten sowie die beiden Channel-Schnittstellen
+implementieren. Diese Namen und Payloads bleiben in den folgenden Übungen unverändert.
 
 ## Aufgabe
 
-Bearbeite zuerst [start/sequence.md](start/sequence.md) allein oder in der Gruppe. Nutze
-anschließend [solution/sequence.md](solution/sequence.md) zum Abgleich. Beide Blätter
-verwenden dieselben Fragen, Tabellen und Diagrammplätze.
+Ergänze in `start/` die markierten TODOs und gleiche sie mit `solution/` ab:
 
-1. Trage die sechs Bausteine in den Kontroll- beziehungsweise Ereignispfad ein.
-2. Ordne jedem Baustein Verantwortung und Ausführungskontext zu.
-3. Lege fest, welche Ausgaben Shell-Antworten und welche interne Logs sind.
-4. Unterscheide Werkstückzahl, GPIO-Flanken und Statistikzähler.
-5. Bestimme Sollwerte für einen Puls, einen Fünfer-Burst und ungültige oder nicht zulässige
-   Anforderungen.
-6. Formuliere eine Invariante, die in 3.10 und 3.12 überprüft werden kann.
+1. Definiere `event_command` mit Command-Typ, Sequenznummer und Parametern.
+2. Definiere `event_input` mit Quelle, Sequenznummer, logischem Zustand und Zeitstempel.
+3. Deklariere `event_cmd_chan` und `event_input_chan` in einem öffentlichen Header.
+4. Definiere beide Channels mit passenden Initialwerten.
+5. Halte GPIO- und Boardtypen aus den Nachrichtentypen heraus.
 
-## Durchführung und Übergabe
+## Build und Start
 
-Dies ist eine Architekturübung ohne eigenes Build. Halte die ausgefüllte Sequenzskizze
-während 3.10 und 3.12 bereit. Änderungen an den hier festgelegten Zähler- oder Fehlerregeln
-müssen begründet und in den jeweiligen README-Dateien dokumentiert werden.
+```sh
+west build -p always -b native_sim training-zephyr/practices/day3/3.08-event-flow/start \
+  -d build/day3-3.08
+./build/day3-3.08/zephyr/zephyr.exe
+```
 
-## Abnahmekriterien
+Für die Referenz `start` durch `solution` ersetzen und ein eigenes Build-Verzeichnis
+verwenden.
 
-- Kontrollpfad und Ereignispfad sind getrennt dargestellt.
-- Alle Bausteine besitzen eine klare Verantwortung und einen Ausführungskontext.
-- Ein vollständiger Puls wird nicht mit einer einzelnen GPIO-Flanke verwechselt.
-- Ungültige Eingaben erzeugen keinen GPIO-Stimulus und erhöhen keine Werkstückzahl.
-- Sollwerte erlauben die spätere Überprüfung auch bei asynchroner Verarbeitung.
+## Verbindlicher Vertrag
+
+- `event_cmd_chan`: Shell-Producer, Stimulus-Subscriber-Consumer.
+- `event_input_chan`: Stimulus-Producer, Async-Listener-Consumer.
+- `event reset` setzt vereinbarte Statistikfelder und `last_error` zurück, ändert aber keine
+  Adapter- oder Boardkonfiguration.
+- Status und Statistik verwenden ab Übung 3.07 dieselben benannten Felder.
+- Ungültige Shell-Eingaben publizieren keinen Command.
+
+## Erfolgskriterien
+
+- Start und Solution bauen unabhängig für `native_sim`.
+- Beide Channels und Payloads sind in öffentlichen Headern deklariert.
+- Payloads enthalten keine GPIO-Spezifikation und sind targetunabhängig.
+- Channel-Namen und Nachrichtentypen werden in späteren Übungen nicht mehr geändert.

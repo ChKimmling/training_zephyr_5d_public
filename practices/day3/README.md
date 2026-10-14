@@ -8,10 +8,13 @@ unabhängig baubar und enthält ein Teilnehmergerüst in `start/` sowie eine Ref
 |---|---|---|
 | 3.02 | [Logging aktivieren und gezielt filtern](3.02-logging-basics/README.md) | Logging-Modul und Log-Level |
 | 3.05 | [Zephyr Shell aktivieren und erkunden](3.05-shell-setup/README.md) | Shell-Konfiguration und Standardkommandos |
-| 3.07 | [Status- und Bedienkommandos](3.07-event-shell/README.md) | Eigene Shell-Kommandos und Service-API |
-| 3.08 | [Ereignispfad für den Use-Case planen](3.08-event-flow/README.md) | Kontrollpfad, Ereignispfad und Zählersemantik |
-| 3.10 | [GPIO-Emulation per Shell triggern](3.10-shell-stimulus/README.md) | Reproduzierbare GPIO-Events ohne Hardware |
-| 3.12 | [Interaktiver Event Service](3.12-event-service/README.md) | Shell, Stimulus, Callback und asynchrone Verarbeitung |
+| 3.07 | [zbus-Steuerkanal](3.07-event-shell/README.md) | Commands über `event_cmd_chan` |
+| 3.08 | [zbus-Vertrag](3.08-event-flow/README.md) | Nachrichtentypen und Channel-Vertrag |
+| 3.09 | [Input-Channel](3.09-input-channel/README.md) | Commands in portable Input Events übersetzen |
+| 3.10 | [Stimuli per Shell](3.10-shell-stimulus/README.md) | Nicht blockierende Einzel- und Sequenzstimuli |
+| 3.11 | [Asynchrone Verarbeitung](3.11-async-processing/README.md) | Async Listener und Verarbeitungskontexte |
+| 3.12 | [Integrierter Event Service](3.12-event-service/README.md) | Vollständiger zbus-Ereignispfad |
+| 3.13 | [Portabilität](3.13-portability/README.md) | Gleicher Vertrag in zwei Targetvarianten |
 
 ## Voraussetzungen und Befehle
 
@@ -23,6 +26,7 @@ verwendet werden:
 export ZEPHYR_TOOLCHAIN_VARIANT=host
 ```
 
-Build- und Startbefehle sowie Shell-Abnahmesequenzen stehen jeweils im README. Übung 3.08 ist
-eine Planungsübung ohne eigenes Build. Die übrigen Anwendungen verwenden `native_sim`; für die
-Hauptübungen ist keine Hardware erforderlich. Beende sie mit Ctrl+C.
+Build- und Startbefehle sowie Shell-Abnahmesequenzen stehen jeweils im README. Die
+zbus-Übungen halten Nachrichtentypen und Channel-Namen ab 3.08 stabil. Alle Pflichtübungen
+verwenden `native_sim`; für die Hauptübungen ist keine Hardware erforderlich. Beende laufende
+Anwendungen mit Ctrl+C.

@@ -1,17 +1,16 @@
-# 3.07 – Status- und Bedienkommandos
+# 3.07 – zbus-Steuerkanal
 
 ## Lernziel
 
-Eine hierarchische Shell-Schnittstelle implementieren, die ausschließlich über ein
-öffentliches Service-API Status abfragt und Statistiken bedient.
+Schreibende Shell-Kommandos als Nachrichten modellieren, die über `event_cmd_chan` an einen
+zbus Message Subscriber übertragen werden.
 
 ## Ausgangslage und Aufgabe
 
-Das Projekt enthält Shell-Kommandos `event status`, `event stats` und `event reset`, eine Service-API sowie kommentierte TODOs in
-`start/`. Ergänze mutex-geschützte Service-Snapshots und die dokumentierte Reset-Semantik.
-Die Shell-Schicht darf keine internen Servicevariablen direkt lesen. Die Shell-Registrierung
-legt für jedes Kommando die genaue Argumentzahl fest; zusätzliche Argumente werden daher
-bereits von der Shell abgewiesen, bevor der Handler ausgeführt wird.
+Das Projekt enthält Shell-Kommandos `event start`, `event stop` und `event reset`,
+`event_command`, den `event_cmd_chan` und ein Subscriber-Gerüst. Ergänze in `start/` die
+Command-Erzeugung, Publikation und Subscriber-Verarbeitung. Die Shell darf die Fachlogik nicht
+direkt aufrufen.
 
 ## Build und Start
 
@@ -29,43 +28,34 @@ west build -p always -b native_sim training-zephyr/practices/day3/3.07-event-she
 ./build/day3-3.07-solution/zephyr/zephyr.exe
 ```
 
-Beide Versionen verwenden dieselbe Shell-Konfiguration und denselben Anwendungseinstieg. In
-`start/` sind die Service-Aufgaben als TODOs markiert; `solution/` implementiert sie.
+Beide Versionen verwenden dieselbe Shell-Konfiguration und denselben öffentlichen
+Nachrichtenvertrag. In `start/` sind TODOs für Publisher und Subscriber markiert.
 
 ## Abnahmesequenz
 
 ```text
 event help
-event
-event status
+event stats
+event start
+event stats
+event stop
+event start extra
 event stats
 event reset
-event stats
-event reset extra
-event stats
-event status extra
-event unknown
 ```
 
-`event status` zeigt den Initialisierungszustand, Gerätebereitschaft, Eingangspegel,
-Stimuluszustand und letzten Fehler. `event stats` zeigt `raw`, `processed` und `rejected`.
-Am Anfang sind alle Zähler null. `event reset` setzt ausschließlich diese drei Zähler zurück;
-Status und Konfiguration bleiben unverändert.
-
-`event reset extra` und `event status extra` müssen die falsche Argumentzahl melden, ohne den
-Handler aufzurufen oder Zähler zu ändern. `event unknown` muss von der Shell als unbekanntes
-Unterkommando abgewiesen werden; `event` ohne Unterkommando zeigt eine Hilfeübersicht. Eine
-ungültige Shell-Eingabe erhöht `rejected_count` nicht:
-dieser Zähler ist für vom Service abgewiesene fachliche Event-Anforderungen reserviert.
-`event stats` vor der Initialisierung liefert den definierten Fehler `-EAGAIN` statt eines
-ungültigen Zugriffs oder Absturzes; die Shell übersetzt ihn in eine verständliche Meldung.
+`event stats` zeigt bereits das gemeinsame Tages-Schema. In dieser Stufe werden
+`cmd_published`, `cmd_received` und `cmd_rejected` befüllt; Input-Zähler bleiben null, bis
+spätere Übungen den Input-Channel ergänzen. `cmd_published` steigt nur nach erfolgreicher
+Publikation. `cmd_received` wird vom Subscriber gezählt; nach Queue-Drain sind beide für
+gültige Requests gleich. Falsche Syntax darf nichts publizieren. Der Reset-Command setzt die
+vereinbarten Zähler zurück.
 
 ## Erfolgskriterien
 
-- `event`-Unterkommandos erscheinen in Hilfe und Autovervollständigung.
-- Shell-Handler enthalten nur Parsing, Darstellung und API-Aufrufe.
-- Status, Statistiken und Reset funktionieren ohne Zugriff auf globale Service-Daten.
+- `event start/stop/reset` werden über den Command-Channel publiziert.
+- Shell-Handler enthalten nur Parsing, Darstellung und Command-Publikation.
+- Subscriber empfängt gültige Commands genau einmal.
 - Zu viele Argumente und unbekannte Unterkommandos werden durch die Shell abgelehnt.
-- Fehler des Service werden mit Fehlermeldung und Fehlerstatus an die Shell zurückgegeben.
-- Der Reset löscht nur Zähler; unzulässige Shell-Aufrufe verändern keine Zähler.
+- Ungültige Shell-Aufrufe publizieren keine Commands.
 - Logging bleibt für Diagnose reserviert; Bedienergebnisse erscheinen in der Shell.

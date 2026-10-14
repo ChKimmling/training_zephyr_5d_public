@@ -1,0 +1,18 @@
+/ {
+	aliases {
+		event-input = &event_input;
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		event_input: event_input {
+			gpios = <&gpio0 1 GPIO_ACTIVE_HIGH>;
+			label = "Variant A input";
+		};
+	};
+};
+
+&gpio0 {
+	ngpios = <2>;
+};

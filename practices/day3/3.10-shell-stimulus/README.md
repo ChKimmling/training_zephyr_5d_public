@@ -1,23 +1,22 @@
-# 3.10 – GPIO-Emulation per Shell triggern
+# 3.10 – Stimuli per Shell
 
 ## Lernziel
 
-GPIO-Events ohne reale Hardware auslösen und Pulse/Bursts asynchron erzeugen, während die
-Shell weiter bedienbar bleibt.
+Portierbare Input Events über Shell-Commands anfordern und Pulse/Bursts asynchron ausführen,
+während die Shell bedienbar bleibt.
 
 ## Aufgabe
 
-`start/` enthält dieselben Dateien und öffentlichen APIs wie `solution/`. Die Event-Shell,
-GPIO-Eingabe und Statistikabfrage sind vorbereitet. Implementiere die kommentierten TODOs in
-`start/src/stimulus.c`: Emulator-Eingabe, Status-Snapshot und nicht blockierende Puls- und
-Burst-Sequenzen. Verwende Delayable Work oder einen vergleichbaren Zustandsautomaten; der
-Shell-Handler darf nicht schlafen. Der Starter-Stub hält den Pegel zunächst inaktiv und
-meldet für noch nicht implementierte Stimulusbefehle `-ENOSYS`.
+`start/` enthält dieselben öffentlichen Nachrichten und Shell-Kommandos wie `solution/`.
+Implementiere die markierten TODOs so, dass die Shell `event_command` auf `event_cmd_chan`
+publiziert. Ein Subscriber übersetzt Input, Pulse und Burst in logische Nachrichten auf
+`event_input_chan`. Nutze Delayable Work oder einen vergleichbaren Zustandsautomaten; der
+Shell-Handler darf nicht schlafen.
 
-Das Overlay stellt über den Alias `event-input` einen Eingang am nativen GPIO-Emulator bereit.
-Validiere Eingaben vollständig, bevor du den Pegel änderst oder Arbeit einplanst. Während eine
-Sequenz läuft, werden manuelle Pegeländerungen und neue Sequenzen mit `-EBUSY` abgewiesen;
-Status und Statistik bleiben abrufbar.
+Die Pflichtlösung erzeugt Input Events deterministisch und ohne reale Hardware. Der optionale
+GPIO-Adapter bleibt hinter derselben portablen Schnittstelle. Ungültige Eingaben dürfen keinen
+Command publizieren. Während einer Sequenz werden manuelle Pegeländerungen und neue Sequenzen
+mit `-EBUSY` abgewiesen; Status und Statistik bleiben abrufbar.
 
 ## Build und Start
 
@@ -67,20 +66,18 @@ event status
 event stats
 ```
 
-Referenzgrenzen: Pulsdauer 20–2000 ms (Standard 100 ms), Burst 1–20 Pulse,
-Abstand 20–2000 ms **zwischen dem Ende eines Pulses und dem nächsten Puls**. Im Burst ist
-jeder Puls 100 ms aktiv. Die erste positive Flanke erfolgt beim Annehmen der Sequenz; der
-Aufruf `event pulse 20` erzeugt daher genau zwei rohe GPIO-Flanken. `event input` ist nur im
-Zustand `idle` erlaubt. Während `event burst 3 200` sollte die Shell auf `event status` und
-`event stats` reagieren. Die Folge `event burst 20 2000`, anschließend `event pulse` und
-`event input 1`
-prüft Busy-Verhalten; `event cancel` beendet den Burst und stellt den inaktiven Pegel wieder
-her.
+Referenzgrenzen: Pulsdauer 20–2000 ms (Standard 100 ms), Burst 1–20 logische Events,
+Abstand 20–2000 ms. `event input` akzeptiert ausschließlich 0 oder 1; nur ein Übergang auf
+den aktiven Pegel erzeugt ein Input Event, der Rückweg auf `0` beendet den Pegel ohne ein
+zweites fachliches Ereignis. Während
+`event burst 3 200` muss die Shell auf `event status` und `event stats` reagieren. Die Folge
+`event burst 20 2000`, danach `event pulse` und `event input 1`, prüft Busy-Verhalten;
+`event cancel` beendet den Ablauf.
 
-Nach einer vollständig abgearbeiteten Pulssequenz gilt `processed = raw`. Weil beide GPIO-
-Flanken gezählt werden, erzeugt ein Puls zwei Zähleinträge und ein Fünfer-Burst zehn. Während
-einer Sequenz darf `processed` asynchron hinter `raw` liegen; in `start/` und `solution/`
-verarbeitet ein Worker-Thread diese Flanken.
+Jeder akzeptierte `event pulse` erzeugt ein logisches Input Event; `event burst N` erzeugt
+genau N logische Events. Nach Ende der asynchronen Verarbeitung gilt für erfolgreich
+publizierte Events `input_published = input_received = processed`. Physische GPIO-Flanken
+sind Adapterdetails und keine fachlichen Produktzähler.
 
 ## Erfolgskriterien
 

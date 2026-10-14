@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <zephyr/shell/shell.h>
 
+#include "event_channels.h"
 #include "event_service.h"
 #include "stimulus.h"
 
@@ -12,7 +13,7 @@ static int parse_u32(const struct shell *sh, const char *text, uint32_t min,
 	char *end;
 	unsigned long parsed;
 
-	if (text == NULL || text[0] == '\0' || text[0] == '-') {
+	if (text == NULL || text[0] == '\0') {
 		event_service_reject();
 		event_service_set_error(-EINVAL);
 		shell_error(sh, "expected an unsigned integer");
@@ -38,39 +39,41 @@ static int parse_u32(const struct shell *sh, const char *text, uint32_t min,
 	return 0;
 }
 
-static int report_result(const struct shell *sh, const char *name, int ret)
+static int publish_command(const struct shell *sh, struct event_command *command)
 {
-	if (ret == 0) {
-		shell_print(sh, "%s accepted", name);
-		return 0;
+	command->sequence = event_service_next_sequence();
+	int ret = zbus_chan_pub(&event_cmd_chan, command, K_NO_WAIT);
+
+	if (ret != 0) {
+		event_service_record_publish_failure(ret);
+		shell_error(sh, "command publish failed: %d", ret);
+		return ret;
 	}
-	event_service_reject();
-	event_service_set_error(ret);
-	if (ret == -EBUSY) {
-		shell_error(sh, "%s rejected: a stimulus sequence is active", name);
-	} else {
-		shell_error(sh, "%s failed: %d", name, ret);
-	}
-	return ret;
+	event_service_record_command_published();
+	shell_print(sh, "command sequence=%u published", command->sequence);
+	return 0;
 }
 
 static int cmd_status(const struct shell *sh, size_t argc, char **argv)
 {
 	struct event_status status;
-	int ret = event_service_get_status(&status);
+	bool input_active;
+	const char *mode;
+	uint32_t remaining;
+	int ret;
 
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
+	ret = event_service_get_status(&status);
 	if (ret != 0) {
 		shell_error(sh, "status unavailable: %d", ret);
 		return ret;
 	}
-	stimulus_get_status(&status.input_active, &status.stimulus_state,
-			    &status.remaining);
-	shell_print(sh, "initialized=%s input_ready=%s input=%s stimulus=%s remaining=%u error=%d",
-		    status.initialized ? "yes" : "no", status.input_ready ? "yes" : "no",
-		    status.input_active ? "active" : "idle", status.stimulus_state,
-		    status.remaining, status.last_error);
+	stimulus_get_status(&input_active, &mode, &remaining);
+	shell_print(sh, "initialized=%s running=%s input_ready=%s input=%s stimulus=%s remaining=%u last_error=%d",
+		    status.initialized ? "yes" : "no", status.running ? "yes" : "no",
+		    status.input_ready ? "yes" : "no",
+		    input_active ? "active" : "idle", mode, remaining, status.last_error);
 	return 0;
 }
 
@@ -86,72 +89,95 @@ static int cmd_stats(const struct shell *sh, size_t argc, char **argv)
 		shell_error(sh, "stats unavailable: %d", ret);
 		return ret;
 	}
-	shell_print(sh, "raw=%u processed=%u rejected=%u lost=%u",
-		    stats.raw_count, stats.processed_count,
-		    stats.rejected_count, stats.lost_count);
+	shell_print(sh, "cmd_published=%u cmd_received=%u cmd_rejected=%u input_published=%u input_received=%u processed=%u publish_failed=%u last_error=%d",
+		    stats.cmd_published, stats.cmd_received, stats.cmd_rejected,
+		    stats.input_published, stats.input_received, stats.processed,
+		    stats.publish_failed, stats.last_error);
 	return 0;
+}
+
+static int cmd_simple(const struct shell *sh, size_t argc, char **argv,
+		      enum event_command_type type)
+{
+	struct event_command command = {.type = type};
+
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+	return publish_command(sh, &command);
+}
+
+static int cmd_start(const struct shell *sh, size_t argc, char **argv)
+{
+	return cmd_simple(sh, argc, argv, EVENT_CMD_START);
+}
+
+static int cmd_stop(const struct shell *sh, size_t argc, char **argv)
+{
+	return cmd_simple(sh, argc, argv, EVENT_CMD_STOP);
 }
 
 static int cmd_reset(const struct shell *sh, size_t argc, char **argv)
 {
-	int ret;
-
-	ARG_UNUSED(argc);
-	ARG_UNUSED(argv);
-	ret = event_service_reset_stats();
-	return report_result(sh, "reset", ret);
+	return cmd_simple(sh, argc, argv, EVENT_CMD_RESET);
 }
 
 static int cmd_input(const struct shell *sh, size_t argc, char **argv)
 {
-	uint32_t level;
+	struct event_command command = {.type = EVENT_CMD_INPUT};
+	uint32_t value;
 	int ret;
 
 	ARG_UNUSED(argc);
-	ret = parse_u32(sh, argv[1], 0U, 1U, &level);
-	return ret != 0 ? ret : report_result(sh, "input", stimulus_set_input(level != 0U));
+	ret = parse_u32(sh, argv[1], 0U, 1U, &value);
+	if (ret != 0) {
+		return ret;
+	}
+	command.value = (int32_t)value;
+	return publish_command(sh, &command);
 }
 
 static int cmd_pulse(const struct shell *sh, size_t argc, char **argv)
 {
-	uint32_t duration = 100U;
+	struct event_command command = {
+		.type = EVENT_CMD_PULSE,
+		.duration_ms = 100U,
+	};
 	int ret = 0;
 
 	if (argc > 1U) {
-		ret = parse_u32(sh, argv[1], 20U, 2000U, &duration);
+		ret = parse_u32(sh, argv[1], 20U, 2000U, &command.duration_ms);
 	}
-	return ret != 0 ? ret : report_result(sh, "pulse", stimulus_start_pulse(duration));
+	return ret != 0 ? ret : publish_command(sh, &command);
 }
 
 static int cmd_burst(const struct shell *sh, size_t argc, char **argv)
 {
-	uint32_t count;
-	uint32_t gap;
+	struct event_command command = {.type = EVENT_CMD_BURST};
 	int ret;
 
 	ARG_UNUSED(argc);
-	ret = parse_u32(sh, argv[1], 1U, 20U, &count);
+	ret = parse_u32(sh, argv[1], 1U, 20U, &command.count);
 	if (ret == 0) {
-		ret = parse_u32(sh, argv[2], 20U, 2000U, &gap);
+		ret = parse_u32(sh, argv[2], 20U, 2000U, &command.interval_ms);
 	}
-	return ret != 0 ? ret : report_result(sh, "burst", stimulus_start_burst(count, gap));
+	return ret != 0 ? ret : publish_command(sh, &command);
 }
 
 static int cmd_cancel(const struct shell *sh, size_t argc, char **argv)
 {
-	ARG_UNUSED(argc);
-	ARG_UNUSED(argv);
-	return report_result(sh, "cancel", stimulus_cancel());
+	return cmd_simple(sh, argc, argv, EVENT_CMD_CANCEL);
 }
 
 SHELL_STATIC_SUBCMD_SET_CREATE(event_commands,
 	SHELL_CMD_ARG(status, NULL, "Show service status", cmd_status, 1, 0),
 	SHELL_CMD_ARG(stats, NULL, "Show event statistics", cmd_stats, 1, 0),
+	SHELL_CMD_ARG(start, NULL, "Start accepting input events", cmd_start, 1, 0),
+	SHELL_CMD_ARG(stop, NULL, "Stop accepting input events", cmd_stop, 1, 0),
 	SHELL_CMD_ARG(reset, NULL, "Reset statistics", cmd_reset, 1, 0),
-	SHELL_CMD_ARG(input, NULL, "Set emulated input: 0 or 1", cmd_input, 2, 0),
-	SHELL_CMD_ARG(pulse, NULL, "Start pulse: optional duration in ms", cmd_pulse, 1, 2),
-	SHELL_CMD_ARG(burst, NULL, "Start burst: count and gap in ms", cmd_burst, 3, 0),
+	SHELL_CMD_ARG(input, NULL, "Publish a logical input: 0 or 1", cmd_input, 2, 0),
+	SHELL_CMD_ARG(pulse, NULL, "Publish a pulse: optional duration in ms", cmd_pulse, 1, 2),
+	SHELL_CMD_ARG(burst, NULL, "Publish count and interval in ms", cmd_burst, 3, 0),
 	SHELL_CMD_ARG(cancel, NULL, "Cancel active stimulus", cmd_cancel, 1, 0),
 	SHELL_SUBCMD_SET_END
 );
-SHELL_CMD_REGISTER(event, &event_commands, "Interactive event service", NULL);
+SHELL_CMD_REGISTER(event, &event_commands, "Integrated zbus event service", NULL);

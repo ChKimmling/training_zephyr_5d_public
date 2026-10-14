@@ -3,6 +3,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 
+#include "event_channels.h"
 #include "event_service.h"
 #include "stimulus.h"
 
@@ -11,6 +12,7 @@ LOG_MODULE_REGISTER(day3_shell_stimulus, LOG_LEVEL_INF);
 static const struct gpio_dt_spec input =
 	GPIO_DT_SPEC_GET(DT_ALIAS(event_input), gpios);
 static struct gpio_callback input_callback;
+static uint32_t input_sequence;
 
 static void input_changed(const struct device *port, struct gpio_callback *callback,
 			  gpio_port_pins_t pins)
@@ -18,7 +20,25 @@ static void input_changed(const struct device *port, struct gpio_callback *callb
 	ARG_UNUSED(port);
 	ARG_UNUSED(callback);
 	if ((pins & BIT(input.pin)) != 0U) {
-		event_service_record_raw();
+		int active = gpio_pin_get_dt(&input);
+
+		if (active <= 0) {
+			return;
+		}
+		struct event_input event = {
+			.source = EVENT_SOURCE_EMULATED,
+			.sequence = ++input_sequence,
+			.active = true,
+			.timestamp = k_uptime_get(),
+		};
+		int ret = zbus_chan_pub(&event_input_chan, &event, K_NO_WAIT);
+
+		if (ret == 0) {
+			event_service_record_input_published();
+		} else {
+			event_service_record_publish_failure(ret);
+			LOG_ERR("input publish failed: %d", ret);
+		}
 	}
 }
 

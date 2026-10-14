@@ -1,9 +1,10 @@
 #include <errno.h>
 #include <zephyr/drivers/gpio.h>
+#include <zephyr/kernel.h>
 
+#include "event_channels.h"
 #include "event_service.h"
 
-/* TODO: Keep this devicetree-based input spec shared with the stimulus adapter. */
 static const struct gpio_dt_spec input =
 	GPIO_DT_SPEC_GET(DT_ALIAS(event_input), gpios);
 static struct gpio_callback input_callback;
@@ -14,7 +15,29 @@ static void input_changed(const struct device *port, struct gpio_callback *callb
 	ARG_UNUSED(port);
 	ARG_UNUSED(callback);
 	if ((pins & BIT(input.pin)) != 0U) {
-		event_service_record_input_event();
+		int level = gpio_pin_get_dt(&input);
+
+		if (level < 0) {
+			event_service_record_publish_failure(level);
+			return;
+		}
+		if (level == 0) {
+			return;
+		}
+		/* TODO: Publish one logical event for the active edge without blocking. */
+		struct event_input event = {
+			.source = EVENT_SOURCE_EMULATED,
+			.sequence = event_service_next_sequence(),
+			.active = true,
+			.timestamp = k_uptime_get(),
+		};
+		int ret = zbus_chan_pub(&event_input_chan, &event, K_NO_WAIT);
+
+		if (ret == 0) {
+			event_service_record_input_published();
+		} else {
+			event_service_record_publish_failure(ret);
+		}
 	}
 }
 
