@@ -5,7 +5,6 @@
 
 #include "event_messages.h"
 
-ZBUS_CHAN_DECLARE(event_cmd_chan);
-ZBUS_CHAN_DECLARE(event_input_chan);
+/* TODO: Declare the public event channels. */
 
 #endif

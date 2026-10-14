@@ -6,8 +6,6 @@
 #include "event_service.h"
 #include "stimulus.h"
 
-static uint32_t command_sequence;
-
 static int parse_u32(const struct shell *sh, const char *text, uint32_t min,
 		     uint32_t max, uint32_t *value)
 {
@@ -39,18 +37,10 @@ static int parse_u32(const struct shell *sh, const char *text, uint32_t min,
 
 static int publish_command(const struct shell *sh, struct event_command *command)
 {
-	command->sequence = ++command_sequence;
+	ARG_UNUSED(command);
 	/* TODO: Publish to event_cmd_chan and surface the return code. */
-	int ret = zbus_chan_pub(&event_cmd_chan, command, K_NO_WAIT);
-
-	if (ret != 0) {
-		event_service_record_publish_failure(ret);
-		shell_error(sh, "command publish failed: %d", ret);
-		return ret;
-	}
-	event_service_record_command_published();
-	shell_print(sh, "command sequence=%u published", command->sequence);
-	return 0;
+	shell_error(sh, "command publisher is not implemented yet");
+	return -ENOSYS;
 }
 
 static int cmd_status(const struct shell *sh, size_t argc, char **argv)

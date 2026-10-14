@@ -22,7 +22,6 @@ static void event_worker(void *p1, void *p2, void *p3)
 	while (true) {
 		k_sem_take(&event_pending, K_FOREVER);
 		/* TODO: Perform the application work before incrementing processed. */
-		atomic_inc(&processed);
 	}
 }
 
@@ -32,14 +31,6 @@ K_THREAD_DEFINE(event_worker_thread, 1024, event_worker, NULL, NULL, NULL,
 int event_service_init(void)
 {
 	/* TODO: Reset the complete stable statistics set. */
-	atomic_set(&cmd_published, 0);
-	atomic_set(&cmd_received, 0);
-	atomic_set(&cmd_rejected, 0);
-	atomic_set(&input_published, 0);
-	atomic_set(&input_received, 0);
-	atomic_set(&processed, 0);
-	atomic_set(&publish_failed, 0);
-	atomic_set(&last_error, 0);
 	return 0;
 }
 
@@ -85,13 +76,5 @@ int event_service_get_stats(struct event_stats *stats)
 int event_service_reset_stats(void)
 {
 	/* TODO: Reset all counters while leaving the active stimulus untouched. */
-	atomic_set(&cmd_published, 0);
-	atomic_set(&cmd_received, 0);
-	atomic_set(&cmd_rejected, 0);
-	atomic_set(&input_published, 0);
-	atomic_set(&input_received, 0);
-	atomic_set(&processed, 0);
-	atomic_set(&publish_failed, 0);
-	atomic_set(&last_error, 0);
-	return 0;
+	return -ENOSYS;
 }

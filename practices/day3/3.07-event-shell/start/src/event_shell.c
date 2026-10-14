@@ -43,20 +43,10 @@ static int cmd_stats(const struct shell *sh, size_t argc, char **argv)
 
 static int publish_command(const struct shell *sh, enum event_command_type type)
 {
-	struct event_command command = {
-		.type = type,
-		.sequence = event_service_next_sequence(),
-	};
-	int ret = zbus_chan_pub(&event_cmd_chan, &command, K_NO_WAIT);
-
-	if (ret != 0) {
-		event_service_record_rejected();
-		shell_error(sh, "command publish failed: %d", ret);
-		return ret;
-	}
-	event_service_record_published();
-	shell_print(sh, "command type=%d published", type);
-	return 0;
+	ARG_UNUSED(type);
+	/* TODO: Create, sequence, and publish the requested command. */
+	shell_error(sh, "command publisher is not implemented yet");
+	return -ENOSYS;
 }
 
 static int cmd_start(const struct shell *sh, size_t argc, char **argv)

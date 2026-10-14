@@ -14,10 +14,6 @@ int event_service_init(void)
 {
 	k_mutex_lock(&service_mutex, K_FOREVER);
 	/* TODO: Initialize the complete shared service state. */
-	counters = (struct event_stats){0};
-	running = false;
-	last_error = 0;
-	sequence_number = 0U;
 	initialized = true;
 	k_mutex_unlock(&service_mutex);
 	return 0;
@@ -101,8 +97,6 @@ int event_service_reset_stats(void)
 		return -EAGAIN;
 	}
 	/* TODO: Reset only the counters; keep the service state. */
-	counters = (struct event_stats){0};
-	last_error = 0;
 	k_mutex_unlock(&service_mutex);
-	return 0;
+	return -ENOSYS;
 }
