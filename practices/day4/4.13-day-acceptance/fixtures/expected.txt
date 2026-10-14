@@ -1,0 +1,5 @@
+PIPELINE: newest value wins, capacity 4, six inputs produce two drops
+CONNECTIVITY: two connect transitions, one disconnect transition
+TCP: two complete GET sessions, second snapshot has sequence 2
+TESTS: valid, range, sensor error, overload, gap and age
+

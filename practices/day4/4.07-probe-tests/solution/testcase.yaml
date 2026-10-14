@@ -1,0 +1,6 @@
+tests:
+  training.day4.probe:
+    tags: day4 sensor pipeline
+    platform_allow:
+      - native_sim
+

@@ -1,0 +1,15 @@
+/ {
+	aliases {
+		motion-sensor = &motion_sensor;
+	};
+};
+
+&i2c0 {
+	status = "okay";
+	motion_sensor: bmi160@68 {
+		compatible = "bosch,bmi160";
+		reg = <0x68>;
+		status = "okay";
+	};
+};
+
