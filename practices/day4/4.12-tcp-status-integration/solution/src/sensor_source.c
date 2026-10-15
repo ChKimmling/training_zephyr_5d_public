@@ -1,14 +1,18 @@
 #include "sensor_source.h"
 
 #include <errno.h>
+#include <stddef.h>
 #include <stdint.h>
 
+#if defined(CONFIG_BOARD_NATIVE_SIM)
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/emul.h>
 #include <zephyr/drivers/emul_sensor.h>
 #include <zephyr/drivers/sensor.h>
+#endif
 
+#if defined(CONFIG_BOARD_NATIVE_SIM)
 #define MOTION_NODE DT_ALIAS(motion_sensor)
 #define EMUL_SHIFT 4
 
@@ -89,4 +93,43 @@ void sensor_source_fail_next_read(bool fail)
 {
 	fail_next_read = fail;
 }
+#else
+/* Das nRF7002 DK besitzt in der verwendeten Boarddefinition keinen
+ * Bewegungssensor. Der optionale Hardwaretransfer nutzt deshalb dieselbe
+ * Sensor-Schnittstelle mit einem kontrollierbaren synthetischen Wert. */
+static struct motion_axes synthetic_sample = {0, 0, 9807};
+static bool fail_next_read;
+
+int sensor_source_init(void)
+{
+	return 0;
+}
+
+int sensor_source_set_sample(const struct motion_axes *axes)
+{
+	if (axes == NULL) {
+		return -EINVAL;
+	}
+	synthetic_sample = *axes;
+	return 0;
+}
+
+int sensor_source_read(struct motion_axes *axes)
+{
+	if (axes == NULL) {
+		return -EINVAL;
+	}
+	if (fail_next_read) {
+		fail_next_read = false;
+		return -EIO;
+	}
+	*axes = synthetic_sample;
+	return 0;
+}
+
+void sensor_source_fail_next_read(bool fail)
+{
+	fail_next_read = fail;
+}
+#endif
 

@@ -56,4 +56,6 @@ Sollwerte. Netzwerkdemos nutzen Loopback und benötigen kein TAP-Setup.
 - [Network Management und Connection Manager](../../exkurs/network-manager.md)
 
 `nrf52840dongle/nrf52840`, ESP32-C5-DevKitC-1 und BLE sind optionale Transferziele
-und gehören nicht zur Pflichtabnahme.
+und gehören nicht zur Pflichtabnahme. 4.12 und 4.13 enthalten zusätzlich einen
+geprüften optionalen Build für `nrf7002dk/nrf5340/cpuapp`; er verwendet synthetische
+Sensorwerte und TCP-Loopback, nicht die WLAN-Schnittstelle.

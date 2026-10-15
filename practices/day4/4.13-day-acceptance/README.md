@@ -40,9 +40,10 @@ sh training-zephyr/practices/day4/4.13-day-acceptance/scripts/check.sh .
 6. Kommandos, Ergebnisse und offene Abweichungen in einer Übergabenotiz festhalten.
 
 Das Skript prüft die PASS-Marke der TCP-Anwendung und die Modultests. Es vergleicht
-`fixtures/expected.txt` nicht automatisch; weitere Diagnose- und Fehlerfälle sind manuell
-bzw. mit ergänzten Tests nachzuweisen. Eine automatische `STALE`-Bewertung ist im
-aktuellen Probe-Modul nicht implementiert.
+zusätzlich beide Antwortsequenzen und zentrale Statusfelder. `fixtures/expected.txt`
+dokumentiert die fachlichen Invarianten; weitere Diagnose- und Fehlerfälle sind manuell
+beziehungsweise mit ergänzten Tests zu untersuchen. Eine automatische `STALE`-Bewertung
+ist im aktuellen Probe-Modul nicht implementiert.
 
 ## Erfolgskriterien
 
@@ -57,5 +58,24 @@ aktuellen Probe-Modul nicht implementiert.
 - Diagnosefolge: Build/Kconfig → Devicetree → Emulator → Sensor API → Probe → Queue
   → `app_state` → Netzwerkevents → TCP.
 - PASS-Marke nicht mit vollständiger Fehlerfallabdeckung gleichsetzen.
-- Ein äußeres Prozesszeitlimit ersetzt keinen Socket-Timeout.
-- Devkit- und BLE-Transfers gehören nicht zur Pflichtabnahme.
+- Lese-, Schreib- und Semaphore-Timeouts begrenzen die internen Wartepfade; das äußere
+  Prozesszeitlimit beendet anschließend den weiterlaufenden Simulator.
+- DevKit- und BLE-Transfers gehören nicht zum Pflichtpfad.
+
+## Optional: nRF7002 DK
+
+Die Referenz aus 4.13 besitzt denselben optionalen Hardwarepfad wie die Lösung aus
+4.12: synthetische Sensorwerte und TCP-Loopback auf dem nRF5340-Anwendungskern.
+
+```sh
+unset ZEPHYR_TOOLCHAIN_VARIANT
+west build -p always -b nrf7002dk/nrf5340/cpuapp \
+  training-zephyr/practices/day4/4.13-day-acceptance/reference \
+  -d build/day4-4.13-nrf7002dk
+west flash -d build/day4-4.13-nrf7002dk
+```
+
+Über die UART-Konsole mit 115200 Baud müssen zwei Antworten und anschließend
+`TCP_STATUS PASS` erscheinen. `scripts/check.sh` bleibt eine automatisierte
+`native_sim`-Kampagne; Flashen und UART-Beobachtung des physischen Boards erfolgen
+bewusst separat. Dieser Hardwarepfad prüft nicht die WLAN-Funktion des nRF7002.

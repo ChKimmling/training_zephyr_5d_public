@@ -12,6 +12,7 @@ Optionale Vertiefungen (z. B. Hardware-Boards, Zephyr-Module, Out-of-tree-Treibe
 - [Kconfig-Syntax](kconfig-syntax.md)
 - [west Meta-Tool und Manifest](west-und-manifest.md)
 - [Devicetree-Syntax](devicetree-syntax.md)
-
 - [Zephyr Sensor API](sensor-api.md)
 - [Network Management und Connection Manager](network-manager.md)
+- [Firmware-Updateverfahren mit Zephyr und MCUboot](update-verfahren.md)
+- [Zephyr-Images mit west sign und imgtool signieren](images-mit-west-sign-signieren.md)

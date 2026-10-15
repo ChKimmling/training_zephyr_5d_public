@@ -12,7 +12,9 @@ bleibt hinter seiner öffentlichen Schnittstelle.
 
 Der Startstand öffnet noch keinen Listener und enthält keinen Testclient.
 Die Referenz zeigt einen internen Loopback-Client mit zwei Sitzungen auf Port 4243.
-Nutze diesen Prüfablauf als Vorlage für die Abnahme des eigenen Stands.
+Nutze diesen Prüfablauf als Vorlage für die Prüfung des eigenen Stands. Der Client
+sendet `GET\n` absichtlich in zwei Teilen. Damit wird sichtbar, dass TCP einen
+Byte-Stream und keine Folge vollständiger Nachrichten überträgt.
 
 | TODO | Auftrag | Nachweis |
 |---|---|---|
@@ -37,7 +39,7 @@ west build -p always -b native_sim \
 ./build/day4-4.12-solution/zephyr/zephyr.exe
 ```
 
-## Abnahmesequenz
+## Prüfsequenz
 
 1. Erste Probe erfassen und den Listener erst bei erreichtem L4-Zustand öffnen.
 2. Einen Snapshot lesen und in stabiler Feldreihenfolge formatieren.
@@ -48,9 +50,10 @@ west build -p always -b native_sim \
    Connectivity prüfen. Zeit- und Quantisierungswerte nicht starr vergleichen.
 6. Zusätzlich einen zu kleinen Formatpuffer prüfen: `-ENOSPC` erwarten.
 
-Die Referenz meldet `TCP_STATUS PASS`, wenn zwei Clients Daten empfangen haben,
-zwei Anfragen gezählt wurden und der letzte Snapshot Sequenz 2 besitzt.
-Sie prüft den Antwortinhalt nicht vollständig und führt keinen Peer-Close-Fehlerfall aus.
+Die Referenz meldet `TCP_STATUS PASS`, wenn beide Antworten die erwartete Sequenz,
+`quality=OK` und `connected=1` enthalten, zwei Anfragen gezählt wurden und der letzte
+Snapshot Sequenz 2 besitzt. Lese-, Schreib- und Semaphore-Wartezeiten sind begrenzt. Ein
+Peer-Close-Fehlerfall bleibt eine mögliche Vertiefung.
 
 ## Erfolgskriterien
 
@@ -62,8 +65,40 @@ Sie prüft den Antwortinhalt nicht vollständig und führt keinen Peer-Close-Feh
 
 ## Hinweise und typische Fehler
 
-- Grenzen des Transportmoduls aus 4.11 gelten auch hier.
+- 4.12 ergänzt den Transport aus 4.11 um zeilenorientiertes Lesen des TCP-Bytestroms.
 - Ein Client mit irgendeiner empfangenen Nutzlast beweist noch keinen vollständigen Status.
 - Netzwerkevents vor der abhängigen Transportaktion zuverlässig verarbeiten lassen.
-- Fehler können die Referenz beim Warten auf `client_done` blockieren; bei ausbleibender
-  Ausgabe kontrolliert beenden und die vorhergehenden Fehlerpfade untersuchen.
+- `recv()` kann auch bei kurzen Anfragen und Antworten nur einen Teil der Daten liefern.
+- Der kleine Antwortpuffer wird vor dem Netzwerkablauf geprüft und muss `-ENOSPC` liefern.
+
+## Optional: nRF7002 DK
+
+Mit „nrf72 DevKit“ ist hier das in Zephyr 4.4.2 vorhandene **nRF7002 DK** gemeint.
+Das Target für den nRF5340-Anwendungskern lautet `nrf7002dk/nrf5340/cpuapp`.
+
+Das Board besitzt in der verwendeten Zephyr-Boarddefinition keinen Bewegungssensor.
+Der optionale Transfer ersetzt deshalb nur die Sensorquelle durch kontrollierte
+synthetische Werte. TCP bleibt lokaler IPv4-Loopback auf dem Mikrocontroller. Dadurch
+werden Portabilität, Scheduler, Speicher und der Zephyr-Netzwerkstack auf echter
+Hardware geprüft, aber weder ein physischer Sensor noch WLAN-Kommunikation.
+
+```sh
+unset ZEPHYR_TOOLCHAIN_VARIANT
+west build -p always -b nrf7002dk/nrf5340/cpuapp \
+  training-zephyr/practices/day4/4.12-tcp-status-integration/solution \
+  -d build/day4-4.12-nrf7002dk
+west flash -d build/day4-4.12-nrf7002dk
+```
+
+Der Startstand kann mit demselben Target und einem eigenen Buildverzeichnis gebaut
+werden; im Quellpfad wird dazu `solution` durch `start` ersetzt.
+
+Die UART-Ausgabe kann beispielsweise mit 115200 Baud über `/dev/ttyACM0` gelesen
+werden. Erwartet werden zwei Statusantworten und `TCP_STATUS PASS`. Der
+boardspezifische Test-Zufallszahlengenerator ist ausschließlich für TCP-Sequenznummern
+im lokalen Trainings-Loopback aktiviert und nicht für kryptografische oder produktive
+Anwendungen geeignet.
+
+Ein echter WLAN-Transfer ist eine eigenständige Erweiterung: Er benötigt den
+nRF7002-WLAN-Treiber, sichere Bereitstellung der Zugangsdaten, DHCP beziehungsweise
+eine statische Adresse, Bindung an die WLAN-Schnittstelle und einen externen Client.
